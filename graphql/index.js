@@ -1,6 +1,7 @@
 const graphql = require("graphql");
 const User = require("../mongo/schema/user");
 const Post = require("../mongo/schema/post");
+const Heart = require("../mongo/schema/heart");
 
 const {
   GraphQLObjectType,
@@ -48,6 +49,16 @@ const UserType = new GraphQLObjectType({
   }),
 });
 
+//HeartType is a join between user and post id
+const HeartType = new GraphQLObjectType({
+  name: "Heart",
+  fields: () => ({
+    id: { type: GraphQLID },
+    idUser: { type: GraphQLID },
+    idPost: { type: GraphQLID },
+  }),
+});
+
 const RootQuery = new GraphQLObjectType({
   name: "RootQueryType",
   fields: {
@@ -80,6 +91,12 @@ const RootQuery = new GraphQLObjectType({
       type: new GraphQLList(UserType),
       resolve(parent, args) {
         return User.find({});
+      },
+    },
+    hearts: {
+      type: new GraphQLList(HeartType),
+      resolve(parent, args) {
+        return Heart.find({});
       },
     },
   },
@@ -156,6 +173,31 @@ const Mutation = new GraphQLObjectType({
       },
       resolve(parent, args) {
         return Post.findByIdAndDelete(args.id);
+      },
+    },
+
+    //Heart
+    addHeart: {
+      type: HeartType,
+      args: {
+        idUser: { type: new GraphQLNonNull(GraphQLString) },
+        idPost: { type: new GraphQLNonNull(GraphQLString) },
+      },
+      resolve(parent, args) {
+        let heart = new Heart({
+          idUser: args.idUser,
+          idPost: args.idPost,
+        });
+        return heart.save();
+      },
+    },
+    deleteHeart: {
+      type: HeartType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLID) },
+      },
+      resolve(parent, args) {
+        return Heart.findByIdAndDelete(args.id);
       },
     },
   },
